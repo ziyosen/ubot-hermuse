@@ -24,6 +24,7 @@ class Perintah:
 class Registry:
     def __init__(self) -> None:
         self._cmds: dict[str, Perintah] = {}
+        self._cbs: list[tuple[str, object]] = []  # (prefix, handler)
 
     def daftar(self, nama: str, izin_min: str = "member"):
         def deco(fn):
@@ -33,6 +34,19 @@ class Registry:
 
     def get(self, nama: str) -> Perintah | None:
         return self._cmds.get(nama.lower())
+
+    def daftar_cb(self, prefix: str):
+        """Daftarkan handler callback_query untuk prefix data (mis. 'f:')."""
+        def deco(fn):
+            self._cbs.append((prefix, fn))
+            return fn
+        return deco
+
+    def cb_handler(self, data: str):
+        for prefix, fn in self._cbs:
+            if data.startswith(prefix):
+                return fn
+        return None
 
     def semua(self) -> list[str]:
         return sorted(self._cmds)

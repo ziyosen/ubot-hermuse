@@ -155,6 +155,7 @@ class BotAPI:
             raw=msg,
         )
         ktx._balas = self._mk_balas(chat_id, msg["message_id"])
+        ktx._balas_kb = self._mk_balas(chat_id, msg["message_id"])
         ktx._edit = self._mk_edit(chat_id)
         ktx._hapus = self._mk_hapus(chat_id)
         return ktx
@@ -168,6 +169,18 @@ class BotAPI:
                 return r["result"]["message_id"]
             except Exception as e:
                 print(f"[send] GAGAL chat={chat_id}: {type(e).__name__} {e}")
+                raise
+
+        async def balas_kb(teks: str, kb=None) -> int:
+            params = {"chat_id": chat_id, "text": _html(teks), "parse_mode": "HTML"}
+            if kb:
+                params["reply_markup"] = kb
+            try:
+                r = api(self.token, "sendMessage", **params)
+                print(f"[send] chat={chat_id} kb ok id={r['result']['message_id']}")
+                return r["result"]["message_id"]
+            except Exception as e:
+                print(f"[send] GAGAL kb chat={chat_id}: {type(e).__name__} {e}")
                 raise
         return balas
 
@@ -205,8 +218,7 @@ class BotAPI:
             api(self.token, "answerCallbackQuery", callback_query_id=cb["id"])
         except Exception:
             pass
-        if not data.startswith("u:"):
-            return
+        # dispatch: handler 'cb' lama (u:) + tabel prefix (f: dll)
         from core.backend import Konteks
         chat = msg.get("chat", {})
         ktx = Konteks(
@@ -220,17 +232,25 @@ class BotAPI:
             raw={"callback": cb, "data": data},
         )
         ktx._balas = self._mk_balas(chat.get("id", 0), msg.get("message_id", 0))
+        ktx._balas_kb = self._mk_balas(chat.get("id", 0), msg.get("message_id", 0))
         ktx._edit = self._mk_edit(chat.get("id", 0))
         ktx._hapus = self._mk_hapus(chat.get("id", 0))
         print(f"[callback] {user.get('id')} {data}")
-        # dispatch ke handler 'cb' jika terdaftar
         from core.registry import REGISTRY
-        cmd = REGISTRY.get("cb")
-        if cmd:
+        if data.startswith("u:"):
+            cmd = REGISTRY.get("cb")
+            if cmd:
+                try:
+                    await cmd.callback(ktx, data)
+                except Exception as e:
+                    print(f"[callback] err: {type(e).__name__} {e}")
+            return
+        fn = REGISTRY.cb_handler(data)
+        if fn:
             try:
-                await cmd.callback(ktx, data)
+                await fn(ktx, data)
             except Exception as e:
-                print(f"[callback] err: {type(e).__name__} {e}")
+                print(f"[callback] err {data[:12]}: {type(e).__name__} {e}")
 
     async def poll_once(self) -> int:
         """Satu putaran long-poll. Return jumlah update diproses."""

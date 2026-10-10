@@ -26,6 +26,7 @@ class Konteks:
     raw: Any = None
     # diisi adapter:
     _balas: Optional[Callable[[str], Awaitable[int]]] = None
+    _balas_kb: Optional[Callable[[str, Any], Awaitable[int]]] = None
     _edit: Optional[Callable[[int, str], Awaitable[None]]] = None
     _hapus: Optional[Callable[[list[int]], Awaitable[None]]] = None
 
@@ -33,6 +34,12 @@ class Konteks:
     async def balas(self, teks: str) -> int:
         assert self._balas, "adapter belum memasang _balas"
         return await self._balas(teks)
+
+    async def balas_kb(self, teks: str, kb=None) -> int:
+        """Kirim pesan dengan inline keyboard opsional (fallback: tanpa kb)."""
+        if self._balas_kb:
+            return await self._balas_kb(teks, kb)
+        return await self.balas(teks)
 
     async def edit(self, msg_id: int, teks: str) -> None:
         assert self._edit, "adapter belum memasang _edit"
