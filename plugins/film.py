@@ -8,6 +8,8 @@ from core.registry import REGISTRY
 
 API = os.environ.get("FILM_API", "http://localhost:8017")
 CINEMA = os.environ.get("CINEMA_URL", "https://cinema.xinquins.de5.net")
+# Base PUBLIK untuk link HLS (aturan bos: JANGAN IP publik mentah)
+HLS_BASE = os.environ.get("HLS_PUBLIC_BASE", "http://dashboard.xinquins.de5.net/lk21-api")
 SESI_FILM = {}  # chat_id -> {query, results, tampilan}
 
 
@@ -62,7 +64,9 @@ async def film(ktx, arg: str) -> None:
     if slug:
         d = _get(f"/movies/{slug}/play")
         if d.get("status") and d.get("hls"):
-            url = d["hls"] if str(d["hls"]).startswith("http") else API.rstrip("/") + str(d["hls"])
+            url = str(d["hls"])
+            if not url.startswith("http"):
+                url = HLS_BASE + url  # path relatif /hls?u=... via base publik
             web = f"{CINEMA}/#{slug}"
             await ktx.balas_kb(f"▶️ {d.get('title') or slug}\n{url}\n🌐 {web}", None)
         else:
@@ -110,7 +114,7 @@ async def cb_film(ktx, data: str) -> None:
         d = _get(f"/movies/{slug}/play")
         url = d.get("hls") if d.get("status") else None
         if url and not str(url).startswith("http"):
-            url = API.rstrip("/") + str(url)
+            url = HLS_BASE + str(url)  # path relatif via base publik (tanpa IP)
         if not url:
             await ktx.balas("Link tonton belum tersedia.")
             return
