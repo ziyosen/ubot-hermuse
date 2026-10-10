@@ -1,0 +1,5 @@
+# Bot API layer: stdlib only (urllib). Fase userbot:
+telethon==1.45.0
+py-tgcalls==2.3.3
+ntgcalls==2.2.5
+yt-dlp

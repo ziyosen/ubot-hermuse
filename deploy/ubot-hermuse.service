@@ -1,0 +1,18 @@
+[Unit]
+Description=ubot-hermuse (Bot API poller)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=%i
+WorkingDirectory=/opt/ubot-hermuse
+EnvironmentFile=/opt/ubot-hermuse/.env.botapi
+ExecStart=/opt/ubot-hermuse/.venv/bin/python main.py
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

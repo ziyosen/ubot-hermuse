@@ -1,0 +1,12 @@
+__pycache__/
+.venv/
+venv/
+*.db
+*.db-shm
+*.db-wal
+runtime.log
+.env*
+.env.botapi
+.env.userbot
+*.session
+*.session-journal
