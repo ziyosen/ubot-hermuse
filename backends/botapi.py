@@ -155,12 +155,12 @@ class BotAPI:
             raw=msg,
         )
         ktx._balas = self._mk_balas(chat_id, msg["message_id"])
-        ktx._balas_kb = self._mk_balas(chat_id, msg["message_id"])
+        ktx._balas_kb = self._mk_balas(chat_id, msg["message_id"], with_kb=True)
         ktx._edit = self._mk_edit(chat_id)
         ktx._hapus = self._mk_hapus(chat_id)
         return ktx
 
-    def _mk_balas(self, chat_id: int, reply_to: int):
+    def _mk_balas(self, chat_id: int, reply_to: int, with_kb: bool = False):
         async def balas(teks: str) -> int:
             try:
                 r = api(self.token, "sendMessage", chat_id=chat_id, text=_html(teks),
@@ -182,7 +182,8 @@ class BotAPI:
             except Exception as e:
                 print(f"[send] GAGAL kb chat={chat_id}: {type(e).__name__} {e}")
                 raise
-        return balas
+
+        return balas_kb if with_kb else balas
 
     def _mk_edit(self, chat_id: int):
         async def edit(msg_id: int, teks: str) -> None:
@@ -232,7 +233,7 @@ class BotAPI:
             raw={"callback": cb, "data": data},
         )
         ktx._balas = self._mk_balas(chat.get("id", 0), msg.get("message_id", 0))
-        ktx._balas_kb = self._mk_balas(chat.get("id", 0), msg.get("message_id", 0))
+        ktx._balas_kb = self._mk_balas(chat.get("id", 0), msg.get("message_id", 0), with_kb=True)
         ktx._edit = self._mk_edit(chat.get("id", 0))
         ktx._hapus = self._mk_hapus(chat.get("id", 0))
         print(f"[callback] {user.get('id')} {data}")
